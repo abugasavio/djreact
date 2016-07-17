@@ -265,3 +265,64 @@ Now try to make a change to your ReactJS app. Change `Sample App!` to `Something
 
 Then run node_modules/.bin/webpack --config webpack.local.config.js again, make sure that `./manage.py runserver` is still running and visit your site in the browser. It should say `"Something New!"` now.
 
+### Hot reloading
+
+Here we wan to create local bundles without re-running the `webpack` command every time we change our ReactJS app.
+
+First, we need a `server.js` file that will start a webpack-dev-server for us:
+
+```javascript
+var webpack = require('webpack')
+var WebpackDevServer = require('webpack-dev-server')
+var config = require('./webpack.local.config')
+
+new WebpackDevServer(webpack(config), {
+  publicPath: config.output.publicPath,
+  hot: true,
+  inline: true,
+  historyApiFallback: true,
+}).listen(3000, config.ip, function (err, result) {
+  if (err) {
+    console.log(err)
+  }
+
+  console.log('Listening at ' + config.ip + ':3000')
+})
+```
+
+Next, we need to add/replace the following in our `webpack.local.config.js`:
+
+```javascript
+var ip = 'localhost'
+
+config.entry = {
+  App1: [
+    'webpack-dev-server/client?http://' + ip + ':3000',
+    'webpack/hot/only-dev-server',
+    './reactjs/App1',
+  ],
+}
+
+config.output.publicPath = 'http://' + ip + ':3000' + '/assets/bundles/'
+
+config.plugins = config.plugins.concat([
+  new webpack.HotModuleReplacementPlugin(),
+  new webpack.NoErrorsPlugin(),
+  new BundleTracker({filename: './webpack-stats-local.json'}),
+])
+```
+
+Ready? In one terminal window, start the webpack-dev-server with node server.js and in another terminal window, 
+start the Django devserver with `./manage.py runserver`.
+
+Make sure that you can still see "Something New!".
+
+And now change it to Something Fancy! in `containers/App1Container.jsx` and switch back to your browser. 
+If you are very fast, you can see how it updates itself.
+
+There is another cool thing: When you open the site in Google Chrome and 
+open the developer tools with COMMAND+OPTION+i and then open the Sources tab, 
+you can see webpack:// in the sidebar. It has a folder called . where you will find the original ReactJS sources. 
+You can even put breakpoints here and debug your app like a pro. 
+No more console.log() in your JavaScript code.
+
