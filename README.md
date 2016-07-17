@@ -222,3 +222,46 @@ equivalent of smaller partial templates that you import in Django using the
 
 At this point you can run `node_modules/.bin/webpack --config webpack.local.config.js`
 and it should generate some files in `djreact/static/bundles/`.
+
+### Using the bundle
+
+Upto now we have been able to create a bundle but have not been able to see the result in a browser.
+
+To be able to do this we need to change the templates.
+
+Update `view1.html` so that it looks like this:
+
+```html
+{% extends "base.html" }
+{% load render_bundle from webpack_loader %}
+
+{% block main %}
+<div id="App1"></div>
+{% render_bundle 'vendors' %}
+{% render_bundle 'App1' %}
+{% endblock %}
+```
+
+We also need to add a new setting to `settings.py`:
+
+```python
+WEBPACK_LOADER = {
+    'DEFAULT': {
+        'BUNDLE_DIR_NAME': 'bundles/local/',  # end with slash
+        'STATS_FILE': os.path.join(BASE_DIR, 'webpack-stats-local.json'),
+    }
+}
+```
+
+`BUNDLE_DIR_NAME` tells Django in which folder within the `static` folder it can find the bundles
+
+`STATS_FILE` tells django where it can find the JSON-file that maps entry-point names to bundle files. It is because of
+this stats file that we can use `{% render_bundle 'App1' %}` in our template.  You will also find this `App1` name in 
+your `webpack.base.config.js` file under the entry attribute.
+
+Now run `./manage.py runserver` and visit your site. You should see `"Sample App!"`.
+
+Now try to make a change to your ReactJS app. Change `Sample App!` to `Something New!` in `containers/App1Container.jsx`.
+
+Then run node_modules/.bin/webpack --config webpack.local.config.js again, make sure that `./manage.py runserver` is still running and visit your site in the browser. It should say `"Something New!"` now.
+

@@ -1,3 +1,5 @@
 db.sqlite3
 .idea/*
 node_modules
+webpack-stats-local.json
+djreact/static/bundles/local/*
